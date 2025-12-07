@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ternapay – Sign Up</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <div class="card">
+    <div class="nav-top">
+      <button class="btn-link" onclick="window.location.href='index.html'" style="font-size:14px">← Back to Home</button>
+    </div>
+
+    <div class="logo-wrap">
+      <img src="./logo.png" class="logo" alt="logo">
+    </div>
+
+    <div class="title">Create Account</div>
+    <div class="subtitle">Secure Payments · Doctor/Patient Portal</div>
+
+    <div id="signupAlert"></div>
+
+    <div class="form-grid">
+
+      <div class="input-group">
+        <div class="input-label">Full Name</div>
+        <input id="name" class="input-field" placeholder="John Doe">
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">Email</div>
+        <input id="email" type="email" class="input-field" placeholder="you@example.com">
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">Mobile Number</div>
+        <input id="mobileNumber" type="number" class="input-field" placeholder="9876543210">
+      </div>
+
+      <div class="form-row-2">
+        <div class="input-group">
+          <div class="input-label">Country Code</div>
+          <input id="countryCode" class="input-field" placeholder="+91" value="+91">
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">User Type</div>
+          <select id="type" class="input-field">
+            <option value="">Select</option>
+            <option value="USER">User</option>
+            <option value="DOCTOR">Doctor</option>
+            <option value="LAB_ASSISTANT">Lab Assistant</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="input-group">
+          <div class="input-label">Password</div>
+          <input id="password" type="password" class="input-field" placeholder="••••••••">
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">Confirm Password</div>
+          <input id="confirmPassword" type="password" class="input-field" placeholder="••••••••">
+        </div>
+      </div>
+
+    </div>
+
+    <button class="btn-primary" id="signupBtn">Create Account</button>
+
+    <div class="footer-text">
+      Already have an account?
+      <button class="btn-link" onclick="window.location.href='login.html'">Login</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="./js/api.js"></script>
+<script>
+const signupAlert = document.getElementById("signupAlert");
+const signupBtn = document.getElementById("signupBtn");
+
+function showError(msg) {
+  signupAlert.innerHTML = `<div class="alert alert-error">❌ ${msg}</div>`;
+}
+function showSuccess(msg) {
+  signupAlert.innerHTML = `<div class="alert alert-success">✅ ${msg}</div>`;
+}
+
+signupBtn.onclick = async () => {
+
+  const payload = {
+    email: document.getElementById("email").value.trim(),
+    mobileNumber: Number(document.getElementById("mobileNumber").value.trim()),
+    password: document.getElementById("password").value.trim(),
+    confirmPassword: document.getElementById("confirmPassword").value.trim(),
+    name: document.getElementById("name").value.trim(),
+    countryCode: document.getElementById("countryCode").value.trim(),
+    type: document.getElementById("type").value.trim()
+  };
+
+  // Frontend validation
+  if (!payload.name) return showError('Full Name is required');
+  if (!payload.email) return showError('Email is required');
+  if (!payload.email.includes('@')) return showError('Invalid email format');
+  if (!payload.mobileNumber || payload.mobileNumber.toString().length < 10) return showError('Valid mobile number is required');
+  if (!payload.type) return showError('User Type is required');
+  if (!payload.password) return showError('Password is required');
+  if (payload.password.length < 6) return showError('Password must be at least 6 characters');
+  if (payload.password !== payload.confirmPassword) return showError('Passwords do not match');
+
+  signupBtn.disabled = true;
+  signupBtn.innerHTML = '<span class="spinner"></span>Creating Account...';
+
+  try {
+    const res = await apiFetch("/user/signup", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    console.debug('Signup response', { status: res.status, ok: res.ok, body: data });
+
+    if (!res.ok) {
+      let errors = [];
+
+      if (data.error) errors.push(data.error);
+      if (data.message && data.message !== data.error) errors.push(data.message);
+
+      // Joi error details
+      if (data.details && Array.isArray(data.details)) {
+        data.details.forEach(d => {
+          if (d.message) errors.push(d.message);
+        });
+      }
+
+      const errMsg = errors.length > 0 ? errors.join(" | ") : 'Signup failed';
+      showError(errMsg);
+      signupBtn.disabled = false;
+      signupBtn.innerHTML = 'Create Account';
+      return;
+    }
+
+    showSuccess("Account created successfully! Redirecting to login...");
+    setTimeout(() => window.location.href = "login.html", 800);
+
+  } catch (err) {
+    console.error(err);
+    showError("Network error: " + err.message);
+    signupBtn.disabled = false;
+    signupBtn.innerHTML = 'Create Account';
+  }
+
+};
+</script>
+
+</body>
+</html>

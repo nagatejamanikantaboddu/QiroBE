@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Payment – Ternapay</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="card">
+    <div class="logo-wrap">
+      <img src="logo.png" class="logo">
+    </div>
+
+    <div class="title">Create Payment</div>
+    <div class="subtitle">Doctor Consultation – Secure Payment</div>
+
+    <div id="createAlert"></div>
+
+    <div class="form-grid">
+
+      <div class="input-group">
+        <div class="input-label">Provider ID</div>
+        <input id="providerId" class="input-field" placeholder="Enter provider ID">
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">Amount (INR)</div>
+        <input id="amount" class="input-field" type="number" min="1" placeholder="Enter amount">
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">Description</div>
+        <input id="metadata" class="input-field" placeholder="Optional description">
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">Service Type</div>
+        <input id="consultationType" class="input-field" value="CONSULTATION" disabled>
+      </div>
+
+    </div>
+
+    <button id="createBtn" class="btn-primary">Create Payment</button>
+
+    <div class="footer-text">
+      Need help? Contact support.
+    </div>
+
+  </div>
+</div>
+
+
+
+  <script>
+  const API_BASE = "http://localhost:3001/v1/api";
+
+  function requireAuth() {
+    const token = localStorage.getItem("ternapay_token");
+    const userStr = localStorage.getItem("ternapay_user");
+
+    if (!token || !userStr) {
+      window.location.href = "login.html";
+      return null;
+    }
+    return { token, user: JSON.parse(userStr) };
+  }
+
+  const auth = requireAuth();
+  const createAlert = document.getElementById("createAlert");
+
+  const showError = (msg) => {
+    createAlert.innerHTML = `<div class="alert alert-error">${msg}</div>`;
+  };
+
+  const showSuccess = (msg) => {
+    createAlert.innerHTML = `<div class="alert alert-success">${msg}</div>`;
+  };
+
+  function generateKey() {
+    return "IDEMP-" + Date.now() + "-" + Math.random().toString(36).substring(2, 10);
+  }
+
+  document.getElementById("createBtn").onclick = async () => {
+    if (!auth) return;
+
+    const providerId = document.getElementById("providerId").value.trim();
+    const amount = Number(document.getElementById("amount").value.trim());
+    const description = document.getElementById("metadata").value.trim();
+
+    if (!providerId || !amount) {
+      return showError("Provider ID and Amount are required.");
+    }
+
+    const payload = {
+      amount,
+      currency: "INR",
+      description,
+      providerId,
+      userId: auth.user._id,   // ⭐ FIXED ⭐
+      serviceType: "CONSULTATION",
+      idempotencyKey: generateKey()
+    };
+
+    try {
+      const res = await fetch(API_BASE + "/payments/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + auth.token
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        let errors = [];
+
+        if (data.error) errors.push(data.error);
+        if (data.message && data.message !== data.error)
+          errors.push(data.message);
+        if (Array.isArray(data.details)) {
+          data.details.forEach(d => {
+            if (d.message) errors.push(d.message);
+          });
+        }
+
+        return showError(errors.join("<br>"));
+      }
+
+      const orderId = data.data.orderId;
+      const referenceId = data.data.referenceId;
+      const finalAmount = data.data.amount;
+
+      showSuccess("Payment created! Redirecting…");
+
+      setTimeout(() => {
+        window.location.href =
+          `ternapay.html?orderId=${orderId}&referenceId=${referenceId}&amount=${finalAmount}`;
+      }, 700);
+
+    } catch (err) {
+      console.error(err);
+      showError("Server error. Please try again.");
+    }
+  };
+</script>
+
+
+</body>
+</html>
+

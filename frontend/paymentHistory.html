@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Payment History</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="container">
+  <header class="topbar">
+    <div>
+      <button class="btn-link" onclick="location.href='dashboard.html'" style="font-size:16px;margin-right:12px">← Dashboard</button>
+      <span style="font-weight:700;font-size:16px">Payment History</span>
+    </div>
+    <div id="userInfo"></div>
+    <button id="logoutBtn" class="btn-ghost">Logout</button>
+  </header>
+
+  <main>
+    <section class="card">
+      <h3>📋 Your Payments</h3>
+      <div id="historyList" style="margin:0 -20px"></div>
+      <button onclick="location.href='createPayment.html'" class="btn-primary" style="margin-top:20px;width:100%">+ Create New Payment</button>
+    </section>
+  </main>
+</div>
+
+<script src="./js/api.js"></script>
+<script>
+if (!getToken()) location.href='login.html';
+
+// Display user info
+const user = getUser();
+if (user && user.name) {
+  document.getElementById('userInfo').innerHTML = `<span>Welcome, ${user.name}</span>`;
+}
+
+// Logout handler
+document.getElementById('logoutBtn').onclick = () => {
+  localStorage.removeItem('ternapay_token');
+  localStorage.removeItem('ternapay_user');
+  location.href='login.html';
+};
+
+const historyList = document.getElementById('historyList');
+const payload = decodeToken(getToken()) || {};
+const userId = payload.userId || (user && user._id);
+
+if (!userId) {
+  historyList.innerHTML = '<div class="alert alert-error">❌ User ID not found. Please login again.</div>';
+} else {
+  (async function(){
+    try {
+      console.debug('Fetching payment history for userId:', userId);
+      const res = await apiFetch(`/payments/paymenthistory/${userId}`);
+      console.debug('Payment history response', { status: res.status, ok: res.ok });
+      
+      if (!res.ok) {
+        const errData = await res.json();
+        const errMsg = errData.error || errData.message || `Error ${res.status}`;
+        console.error('Failed to fetch history:', errMsg);
+        return historyList.innerHTML = `<div class="alert alert-error">❌ ${errMsg}</div>`;
+      }
+      
+      const data = await res.json();
+      console.debug('Payment history data:', data);
+      
+      const list = data.data || data || [];
+      if (!list || list.length === 0) {
+        return historyList.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px">📭 No payments found. Start by creating a new payment.</div>';
+      }
+      
+      // Add column headers
+      let headerHtml = `
+        <div class="payment-header">
+          <div>Txn ID</div>
+          <div style="text-align:center">Status</div>
+          <div style="text-align:right">Amount</div>
+          <div style="text-align:center">Date</div>
+          <div style="text-align:center">Time</div>
+        </div>
+      `;
+      
+      const rows = list.map(p => {
+        const status = (p.status || 'pending').toLowerCase();
+        const statusColor = status === 'success' ? '#6ee7b7' : status === 'failed' ? '#ff6b7a' : '#f59e0b';
+        const statusIcon = status === 'success' ? '✓' : status === 'failed' ? '✕' : '⏳';
+        const dateObj = p.createdAt ? new Date(p.createdAt) : null;
+        const dateStr = dateObj ? dateObj.toLocaleDateString() : 'N/A';
+        const timeStr = dateObj ? dateObj.toLocaleTimeString() : 'N/A';
+        return `
+          <div class="payment-row">
+            <div><strong>${p.referenceId || p.orderId || 'N/A'}</strong></div>
+            <div style="color:${statusColor};font-weight:700;text-align:center">${statusIcon} ${status.toUpperCase()}</div>
+            <div style="text-align:right">₹${p.amount || 0}</div>
+            <div style="color:var(--muted);font-size:12px;text-align:center">${dateStr}</div>
+            <div style="color:var(--muted);font-size:12px;text-align:center">${timeStr}</div>
+          </div>
+        `;
+      }).join('');
+      
+      historyList.innerHTML = headerHtml + rows;
+    } catch (err) {
+      console.error('Error loading payment history:', err);
+      historyList.innerHTML = `<div class="alert alert-error">❌ Failed to load payment history: ${err.message}</div>`;
+    }
+  })();
+}
+</script>
+</body>
+</html>
