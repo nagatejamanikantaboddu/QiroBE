@@ -2,7 +2,7 @@
 
 A production-ready Node.js backend for processing payments with Razorpay integration, Redis caching, and comprehensive error handling.
 
-## 🚀 Features
+## Features
 
 - **Payment Processing**: Create and verify payments using Razorpay Checkout
 - **Idempotency**: Prevent duplicate payments with idempotency key implementation
@@ -14,7 +14,7 @@ A production-ready Node.js backend for processing payments with Razorpay integra
 - **Logging**: Request logging with Morgan and application logging with Winston
 - **Security**: Helmet, XSS protection, MongoDB sanitization, CORS
 
-## 📋 Tech Stack
+## Tech Stack
 
 - **Runtime**: Node.js (ES modules)
 - **Framework**: Express.js
@@ -25,7 +25,7 @@ A production-ready Node.js backend for processing payments with Razorpay integra
 - **Validation**: Joi
 - **Dev Tools**: Babel, nodemon
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 - Node.js 16+
@@ -50,7 +50,7 @@ yarn start
 yarn dev
 ```
 
-## 🔧 Environment Variables
+## Environment Variables
 
 Create a `.env` file:
 
@@ -80,7 +80,7 @@ JWT_SECRET=your_jwt_secret
 CORS_ORIGIN=http://localhost:8080
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -117,7 +117,7 @@ src/
     └── cacheService.js       # Centralized caching logic
 ```
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### Authentication
 - `POST /v1/users/signup` - Create new user account
@@ -129,7 +129,7 @@ src/
 - `GET /v1/payments/paymenthistory/:userId` - Get user's payment history
 - `POST /v1/payments/webhook` - Razorpay webhook
 
-## 💰 Payment Flow
+## Payment Flow
 
 1. **Frontend requests order creation**: POST `/v1/payments/create-order`
    - Backend creates Razorpay order
@@ -150,7 +150,7 @@ src/
    - Returns cached payment response with HTTP 200
    - Prevents duplicate Razorpay orders
 
-## 🔐 Caching Strategy
+## Caching Strategy
 
 ### User Data Cache
 - **Key**: `user:{userId}`
@@ -172,7 +172,7 @@ src/
 - **TTL**: 24 hours
 - **Purpose**: Prevent duplicate webhook processing
 
-## 🔑 Key Features Explained
+## Key Features Explained
 
 ### Idempotency Keys
 Prevents duplicate payment orders when network fails or user retries:
@@ -194,7 +194,7 @@ All errors inherit from `APIError` class:
 throw new ApiError(400, 'Invalid payment amount');
 ```
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run tests (if configured)
@@ -204,7 +204,7 @@ yarn test
 yarn lint
 ```
 
-## 📊 Monitoring
+## Monitoring
 
 Logs are written by Winston logger to console and files. Check logs at:
 ```
@@ -213,27 +213,7 @@ logs/
 └── combined.log
 ```
 
-## 🚢 Deployment
-
-### Production Checklist
-- [ ] Set `NODE_ENV=production`
-- [ ] Use environment-specific Razorpay keys
-- [ ] Enable HTTPS for API
-- [ ] Configure CORS for production domain
-- [ ] Set strong JWT secret
-- [ ] Enable MongoDB authentication
-- [ ] Configure Redis persistence
-- [ ] Set up error monitoring (Sentry, etc.)
-- [ ] Enable rate limiting
-- [ ] Configure CSRF protection
-
-### Docker
-```bash
-docker build -t ternapay-backend .
-docker run -p 3001:3001 --env-file .env ternapay-backend
-```
-
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Redis AUTH Error
 **Issue**: `ERR AUTH <password> called without any password configured`
@@ -249,6 +229,6 @@ docker run -p 3001:3001 --env-file .env ternapay-backend
 **Expected behavior**: Returns HTTP 200 with cached payment
 **Disable**: Remove idempotency check if not needed
 
-## 📝 License
+## License
 
 MIT
