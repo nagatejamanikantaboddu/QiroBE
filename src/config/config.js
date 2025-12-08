@@ -21,21 +21,21 @@ const envVarsSchema = Joi.object({
     TOKEN_EXPIRY: Joi.string().required(),
     SALT_ROUNDS: Joi.number().required(),
 
-    AWS_REGION: Joi.string().required(),
-    AWS_ACCESS_KEY_ID: Joi.string().required(),
-    AWS_SECRET_ACCESS_KEY: Joi.string().required(),
-    AWS_BUCKET_NAME: Joi.string().required(),
+    AWS_REGION: Joi.string().optional(),
+    AWS_ACCESS_KEY_ID: Joi.string().optional(),
+    AWS_SECRET_ACCESS_KEY: Joi.string().optional(),
+    AWS_BUCKET_NAME: Joi.string().optional(),
 
-    FAST_2_SMS_KEY: Joi.string().required(),
-    FAST_2_SMS_URL: Joi.string().uri().required(),
+    FAST_2_SMS_KEY: Joi.string().optional(),
+    FAST_2_SMS_URL: Joi.string().uri().optional(),
 
     REDIS_URL: Joi.string().uri().required(),
     REDIS_PASSWORD: Joi.string().optional(),
     REDIS_HOST: Joi.string().optional(),
     REDIS_PORT: Joi.number().optional(),
 
-    EMAIL_API_KEY: Joi.string().required(),
-    SENDER_EMAIL: Joi.string().email().required(),
+    EMAIL_API_KEY: Joi.string().optional(),
+    SENDER_EMAIL: Joi.string().email().optional(),
 }).unknown();
 
 // Validate .env
