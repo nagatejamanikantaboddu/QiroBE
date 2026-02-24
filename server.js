@@ -1,7 +1,5 @@
-import mongoose from 'mongoose';
 import app from './index.js';
 import config from './src/config/config.js';
-import { initRedisClient, disconnectRedis } from './src/config/redis.js';
 import chalk from 'chalk';
 
 // Banner printer
@@ -14,22 +12,13 @@ const printBanner = (title, color = chalk.green.bold) => {
 
 let server;
 
-// Initialize Redis and MongoDB, then start server
+// Start server
 const startServer = async () => {
     try {
-        // Connect to Redis
-        await initRedisClient();
-        printBanner('✅ Redis connected and running!', chalk.blueBright.bold);
-        
-        // Connect to MongoDB
-        await mongoose.connect(config.mongoose.url, config.mongoose.options);
-        printBanner('✅ Payment MongoDB connected successfully!', chalk.cyanBright.bold);
-        printBanner(`${config.mongoose.url}`, chalk.cyanBright.bold);
-
         // Start server
         server = app.listen(config.port, () => {
             printBanner(
-                `🚀 Payment Service running on port ${config.port} in ${config.env} mode`,
+                `🚀 Server running on port ${config.port} in ${config.env} mode`,
                 chalk.magenta.bold
             );
         });
@@ -45,17 +34,15 @@ const gracefulShutdown = async () => {
     
     if (server) {
         server.close(async () => {
-            await mongoose.disconnect();
-            await disconnectRedis();
             printBanner('✅ Server shut down successfully', chalk.green.bold);
             process.exit(0);
         });
     }
 };
 
+// Handle SIGTERM and SIGINT
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
+// Start the server
 startServer();
-
-export { server };

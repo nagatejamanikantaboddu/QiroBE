@@ -1,16 +1,8 @@
 import express from 'express'
 import helmet from 'helmet';
-import xss from 'xss-clean'
-import mongoSanitize from 'express-mongo-sanitize'
-import compression from 'compression'
 import cors from 'cors'
-// const passport = require('passport');
-import httpStatus from 'http-status'
 import config from './src/config/config.js'
 import morgan from './src/config/morgan.js'
-import routes from './src/routes/v1/index.js'
-
-
 
 const app = express();
 
@@ -28,40 +20,25 @@ app.use(express.json());
 // parse urlencoded request body
 app.use(express.urlencoded({ extended: true }));
 
-// sanitize request data
-app.use(xss());
-app.use(mongoSanitize());
-
-// gzip compression
-app.use(compression());
-
 // enable cors
 app.use(cors());
 app.options('*', cors());
 
-// jwt authentication for passport js
-// app.use(passport.initialize());
-// passport.use('jwt', jwtStrategy);
-
-// limit repeated failed requests to auth endpoints
-// if (config.env === 'production') {
-//     app.use('/v1/auth', authLimiter);
-// }
-
-//v1 api routes
-app.use('/v1/api/', routes);
-
-app.use('/', (req, res, next) => res.json({ message: 'success' }))
+// Health check route
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'healthy', message: 'Server is running' });
+});
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
-    next(new Error(httpStatus.NOT_FOUND, 'Not found'));
+    res.status(404).json({ message: 'Not found' });
 });
 
-// convert error to ApiError, if needed
-//app.use(errorConverter);
-
-// handle error
-//app.use(errorHandler);
+// Basic error handling middleware
+app.use((err, req, res, next) => {
+    const status = err.statusCode || 500;
+    const message = err.message || 'Internal server error';
+    res.status(status).json({ error: message });
+});
 
 export default app;
